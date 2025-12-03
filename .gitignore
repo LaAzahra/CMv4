@@ -2,5 +2,4 @@
 .env
 
 # Diretórios de dependências (Enviá-los causa o erro 'invalid ELF header')
-backend/node_modules/
-node_modules/
+/node_modules/
