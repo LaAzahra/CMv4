@@ -76,18 +76,44 @@ app.post("/api/registrar", async (req, res) => {
     return res.status(400).json({ success: false, error: "Campos obrigatórios faltando." });
   }
 
-  try {
-    const hash = await bcrypt.hash(senha, 10);
-    const token = crypto.randomBytes(32).toString("hex");
+  try// ================================
+// REGISTRO (CORRIGIDO)
+// ================================
+app.post("/api/registrar", async (req, res) => {
+    const { nome, email, senha, foto, tipo_usuario } = req.body;
+    // ... (suas verificações de campos)
 
-    await pool.query(`INSERT INTO usuarios (...) VALUES (?, ?, ?, ?, ...)`, [nome, email, hash, ...]);
+    try {
+        // ... (seu código de verificação e hashing)
 
-    res.json({ success: true, message: "Conta criada." });
-  } catch (err) {
-    console.error("❌ ERRO REGISTRO:", err.message);
-    res.status(500).json({ success: false, error: "Erro interno" });
-  }
+        const hash = await bcrypt.hash(senha, 10);
+        const token = crypto.randomBytes(32).toString("hex");
+
+        await pool.query(`
+            INSERT INTO usuarios
+            (nome, email, senha, foto, pontos, online, tipo_usuario, confirmado, token_confirmacao)
+            VALUES (?, ?, ?, ?, 0, FALSE, ?, FALSE, ?)
+        `, [
+            nome,             // 1. ?
+            email,            // 2. ?
+            hash,             // 3. ? (Senha criptografada)
+            foto || null,     // 4. ?
+            tipo_usuario,     // 5. ?
+            token             // 6. ?
+        ]); // <--- AGORA A SINTAXE DO ARRAY ESTÁ CORRETA.
+
+        res.json({ success: true, message: "Conta criada. Confirme por e-mail." });
+
+    } catch (err) {
+        console.error("❌ REGISTRO:", err.message);
+        res.status(500).json({ success: false, error: "Erro interno" });
+    }
 });
+   // Verificar se o email já existe
+    const [rows] = await pool.query("SELECT id FROM usuarios WHERE email = ?", [email]);
+    if (rows.length > 0) {
+      return res.status(400).json({ success: false, error: "Email já registrado." });
+    }         
 
 // ... Inclua todas as suas outras rotas (Login, Desafios, etc.) aqui ...
 
